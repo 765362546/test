@@ -1,3 +1,8 @@
+# openstack aio 试验
+
+---
+
+github下载慢问题
 github加速 https://www.cnblogs.com/pogyang/p/13797430.html
 https://hub.fastgit.org
 199.232.69.194 github.global.ssl.fastly.net
