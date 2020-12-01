@@ -26,3 +26,6 @@ https://docs.openstack.org//kolla-ansible/latest/doc-kolla-ansible.pdf
 
 https://www.jianshu.com/p/73598a5cd00b
 https://www.jianshu.com/p/f02f358a79f4
+
+https://www.cnblogs.com/omgasw/p/13719701.html
+https://blog.csdn.net/Doudou_Mylove/article/details/105195007
