@@ -14,3 +14,12 @@ find ./ -type f|xargs sed -i 's/github.com/hub.fastgit.org/g'
   _lxc_hosts_container_image_url: "http://artifacts.ci.centos.org/sig-cloudinstance/centos-7-191001/x86_64/centos-7-x86_64-docker.tar.xz"  手动下，修改地址
   
   
+---------------------
+
+# kolla-ansible
+
+https://www.cnblogs.com/omgasw/p/12054726.html
+https://wiki.openstack.org/wiki/Kolla
+https://docs.openstack.org/kolla-ansible/latest/
+https://docs.openstack.org/kolla-ansible/latest/user/quickstart.html
+https://docs.openstack.org//kolla-ansible/latest/doc-kolla-ansible.pdf
