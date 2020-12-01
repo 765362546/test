@@ -23,3 +23,5 @@ https://wiki.openstack.org/wiki/Kolla
 https://docs.openstack.org/kolla-ansible/latest/
 https://docs.openstack.org/kolla-ansible/latest/user/quickstart.html
 https://docs.openstack.org//kolla-ansible/latest/doc-kolla-ansible.pdf
+
+https://www.jianshu.com/p/73598a5cd00b
