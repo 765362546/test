@@ -40,3 +40,4 @@ http://download.cirros-cloud.net
 https://docs.openstack.org/image-guide/obtain-images.html
 
 https://wenku.baidu.com/view/8e2c54956429647d27284b73f242336c1eb93016.html
+https://blog.csdn.net/yasyal515/article/details/73196181
