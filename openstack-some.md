@@ -29,3 +29,7 @@ https://www.jianshu.com/p/f02f358a79f4
 
 https://www.cnblogs.com/omgasw/p/13719701.html
 https://blog.csdn.net/Doudou_Mylove/article/details/105195007
+
+
+https://docs.openstack.org/ocata/config-reference/compute/config-options.html
+ block_device_allocate_retries 修改 解决创建volume失败问题
