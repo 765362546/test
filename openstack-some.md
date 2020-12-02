@@ -38,3 +38,5 @@ https://docs.openstack.org/kolla-ansible/latest/user/operating-kolla.html
 
 http://download.cirros-cloud.net
 https://docs.openstack.org/image-guide/obtain-images.html
+
+https://wenku.baidu.com/view/8e2c54956429647d27284b73f242336c1eb93016.html
