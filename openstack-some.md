@@ -32,4 +32,6 @@ https://blog.csdn.net/Doudou_Mylove/article/details/105195007
 
 
 https://docs.openstack.org/ocata/config-reference/compute/config-options.html
- block_device_allocate_retries 修改 解决创建volume失败问题
+ block_device_allocate_retries 修改 
+
+https://docs.openstack.org/kolla-ansible/latest/user/operating-kolla.html
