@@ -37,3 +37,4 @@ https://docs.openstack.org/ocata/config-reference/compute/config-options.html
 https://docs.openstack.org/kolla-ansible/latest/user/operating-kolla.html
 
 http://download.cirros-cloud.net
+https://docs.openstack.org/image-guide/obtain-images.html
