@@ -35,3 +35,5 @@ https://docs.openstack.org/ocata/config-reference/compute/config-options.html
  block_device_allocate_retries 修改 
 
 https://docs.openstack.org/kolla-ansible/latest/user/operating-kolla.html
+
+http://download.cirros-cloud.net
