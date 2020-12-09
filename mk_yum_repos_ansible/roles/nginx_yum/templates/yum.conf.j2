@@ -1,0 +1,16 @@
+server {
+  listen {{ srv_port }} ;
+
+  location / {
+    autoindex on;
+    root         {{ webroot }};
+  }
+{% for yum_src in yums %}
+  location {{ yum_src.location }} {
+    autoindex on;
+    alias {{ yum_src.basedir }};
+  }
+{% endfor %}
+
+}
+

@@ -1,0 +1,4 @@
+- name: copy repo
+  template:
+    src: local.repo.j2
+    dest: "{{ webroot }}/local.repo"

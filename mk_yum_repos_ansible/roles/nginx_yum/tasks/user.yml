@@ -1,0 +1,10 @@
+- name: create group
+  group:
+    name: nginx
+    gid: 1000
+- name: create user
+  user:
+    name: nginx
+    group: nginx
+    uid: 1000
+    home: "{{ webroot }}"

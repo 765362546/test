@@ -1,0 +1,12 @@
+- name: config nginx.conf
+  copy: 
+    src: nginx.conf
+    dest: /etc/nginx/
+    backup: yes
+  notify: restart
+- name: config yum.conf for nginx  
+  template: 
+    src: yum.conf.j2
+    dest: /etc/nginx/conf.d/yum.conf
+    backup: yes
+  notify: restart

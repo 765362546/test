@@ -1,0 +1,16 @@
+# yum服务器ip
+srv_ip: 192.168.157.200
+# yum服务器port
+srv_port: 80
+
+# repo文件路径
+webroot: /data/yum/
+
+# yum源对应的url和本地路径
+yums:
+  - name: centos7.9
+    location: /centos7/
+    basedir: /media/centos7.9/
+  - name: epel7
+    location: /epel7/
+    basedir: /media/epel7/
