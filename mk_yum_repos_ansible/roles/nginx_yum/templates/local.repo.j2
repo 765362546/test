@@ -1,5 +1,6 @@
 {% for yum_src in yums %}
 [{{ yum_src.name }}]
+name={{ yum_src.name }}
 baseurl=http://{{ srv_ip }}:{{ srv_port }}{{ yum_src.location }}
 enabled=1
 gpgcheck=0
