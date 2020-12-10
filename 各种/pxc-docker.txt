@@ -1,0 +1,73 @@
+https://www.percona.com/doc/percona-xtradb-cluster/5.7/install/yum.html#yum
+https://www.percona.com/doc/percona-repo-config/index.html
+
+yum install https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+percona-release enable ps-80 release
+percona-release enable-only psmdb-40 experimental
+percona-release disable all
+sudo yum install Percona-XtraDB-Cluster-57
+
+
+
+https://www.percona.com/doc/percona-xtradb-cluster/5.7/install/docker.html#pxc-docker-container-running
+
+
+docker pull percona/percona-xtradb-cluster
+
+
+docker network create --subnet=172.18.0.0/24 net1
+docker inspect net1
+
+docker volume create v1
+docker volume create v2
+docker volume create v3
+docker inspect v1
+docker inspect v2
+docker inspect v3
+
+
+
+docker run -d -p 3306:3306  -v v1:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root   -e CLUSTER_NAME=cluster1   --name=node1   --net=net1  percona/percona-xtradb-cluster
+
+docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=123123 -v v1:/var/lib/mysql  --name=node1 --net=net1 --ip=172.18.0.2 percona/percona-xtradb-cluster
+
+
+docker run -d -p 3307:3306 -e MYSQL_ROOT_PASSWORD=abc123456 -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=abc123456 -e CLUSTER_JOIN=node1 -v v2:/var/lib/mysql  --name=node2 --net=net1 --ip=172.18.0.3 percona/percona-xtradb-cluster
+
+docker run -d -p 3307:3306 -e MYSQL_ROOT_PASSWORD=abc123456 -e CLUSTER_NAME=PXC -e XTRABACKUP_PASSWORD=abc123456 -e CLUSTER_JOIN=node1 -v v3:/var/lib/mysql  --name=node3 --net=net1 --ip=172.18.0.4 percona/percona-xtradb-cluster
+
+
+
+==============
+
+docker network create pxc-network
+docker run -d \
+  -e MYSQL_ROOT_PASSWORD=root \
+  -e CLUSTER_NAME=cluster1 \
+  --name=node1 \
+  --net=pxc-network \
+  percona/percona-xtradb-cluster:5.7
+  
+  docker run -d \
+  -e MYSQL_ROOT_PASSWORD=root \
+  -e CLUSTER_NAME=cluster1 \
+  -e CLUSTER_JOIN=node1 \
+  --name=node2 \
+  --net=pxc-network \
+  percona/percona-xtradb-cluster:5.7
+  
+  docker run -d \
+  -e MYSQL_ROOT_PASSWORD=root \
+  -e CLUSTER_NAME=cluster1 \
+  -e CLUSTER_JOIN=node1 \
+  --name=node3 \
+  --net=pxc-network \
+  percona/percona-xtradb-cluster:5.7
+  
+  
+  sudo docker exec -it node1 /usr/bin/mysql -uroot -proot
+  
+  show status like 'wsrep%';
+  
+  
+

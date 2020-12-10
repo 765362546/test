@@ -1,0 +1,43 @@
+OpenSSL: 
+证书颁发机构，即ca服务器----有些大家认为比较权威的，颁发的证书就认为是可靠的，但是大部分都需要收费。自己搭建个ca服务器，然后自己颁发-----可靠不可靠完全看客户，浏览器会有提示，一般那些权威的机构，已经添加到了浏览器的可信机构里面。
+
+先创建个ca服务器，自己给自己签名，证明自己是可靠的；自己签名的证书已经可以直接使用了；
+其他服务器，可以向这个ca服务器发起请求，生成证书-----浏览器访问这个服务器时，检查证书，证书里面有颁发机构的信息，即ca服务器端，向ca服务器查询该证书是否正常，正常就继续访问这个服务器----即通过第三方服务器(ca)来证明自己访问的这个服务器是靠谱的。
+
+
+linux上配置ca服务器--------如果需要给其他服务器签署证书，需要修改配置文件，并创建相关目录，如果只是自签，不需要这些操作
+vim /etc/pki/tls/openssl.cnf
+dir=/etc/pki/CA
+
+2、cd /etc/pki/CA
+# mkdir certs newcerts crl
+# touch index.txt
+# echo 01 > seria
+windows上配置ca服务器
+安装openssl windows版，配置参考上边,也是需要创建那些目录，注意，如果使用的是相对路径，它是相对的openssl命令所在的目录
+
+1、创建CA  
+	自己生成一对密钥；
+	openssl genrsa -out cakey.key 2048
+	生成自签证书；      
+	openssl req -x509 -new -key cakey.key -out cacert.crt -days 3650      
+	#在windows下，需要加上 -config openssl.conf 参数
+	
+	nginx可以直接使用自签证书   
+	ssl_certificate      cacert.crt;
+    ssl_certificate_key  cakey.key;
+	
+2、客户端（某服务器，比如nginx）
+	生成一对密钥；
+	openssl genrsa -out server.key 1024
+	生成证书颁发请求, .csr；
+	openssl req -new -key server.key -out server.csr -config openssl.conf
+	将请求发给CA；
+	拷贝server.csr到ca服务器
+3、CA端
+	签署此证书；
+	openssl ca -in server.csr -out server.crt -keyfile cakey.key -cert cacert.crt -days 3650 -config openssl.conf
+	传送给客户端；
+	
+查看证书内容
+openssl x509 -in cert.pem -noout -text	

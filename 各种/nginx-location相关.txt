@@ -1,0 +1,428 @@
+1. 什么是url     https://baike.baidu.com/item/URL格式/10056474?fr=aladdin
+统一资源定位符
+protocol :// hostname[:port] / path / [;parameters][?query]#fragment
+
+协议：  沟通的语言
+主机名：  域名   ---> 必须转换成ip，操作系统才能真正的访问（tcp/ip系统）
+端口      
+资源路径
+
+
+2. 访问一个资源   就是对服务器上资源的请求，后台服务收到请求后，检查自己有没有这个资源，然后进行响应
+--无论有没有这个资源，服务器都需要响应------如果频繁访问没有的资源，对于服务器来说，负担加大
+--对于已有资源，并且访问特别频繁的，可以设置分流，减少单个服务的压力：
+
+   通过nginx，来实现过滤无效请求----减少后台压力
+   对于静态资源，直接由nginx返回，不用经过后台服务
+       -------------有的静态资源，是由后台服务生成的，比如上传的apk，nginx必须能够访问到资源路径-------如果是分离式部署，nginx服务器必须挂载共享目录，或者nginx不处理，仍然由后台服务自己返回
+	   -------------纯静态页面js css等资源，可以拷到nginx服务器上
+	   -------------缓存，对于访问量比较大的资源，放到缓存------就是将磁盘文件读取到内存里，以后再请求的时候，不从磁盘上读了，直接用内存里的
+	                -----问题，缓存时长、缓存命中率-----优化点
+	   
+   对于动态资源，转给后台服务进行响应，如后台压力比较大，就多弄几台，将负责处理同一资源的服务，用upstream分为同一个组，nginx从这一组里面根据策略挑一个进行响应
+
+   其他统一用 location / 来负责处理------有的是指向本地页面，有的是转给某个后台服务
+
+
+
+响应的状态码---------2xx 成功  4xx失败 
+
+
+请求的方法  get  post put delet ...
+
+
+
+
+由 nginx 做反向代理的问题
+
+1. 所以请求都必须经过nginx，nginx压力会比较大
+2. 客户端请求---> nginx ---> 后台    直接访问后台的，实际上是nginx，不是客户端，所以nginx转发时，需要配置上转发的header信息，告诉后台，实际的客户端是谁
+
+
+
+nginx就像送快递的，收件之后，需要问清楚：
+
+寄快递： 发件人  收件人  收件地址  包裹  
+
+发件人  收件人  包裹大小  ---请求头
+包裹                      ---请求内容
+
+收件地址  
+
+快递员得有地图---通过 查询 location  看看这个快递到底送到哪
+有的地图非常精确----匹配的范围小
+有的地图比较粗略----匹配的范围大
+
+location 就是配置这个地图，告诉nginx，去哪找那个收件人
+
+
+
+
+URI路径：
+	
+location [ = | ~ | ~* | ^~ ] uri { ... }
+
+location URI {}:
+	对当前路径及子路径下的所有对象都生效；
+
+location = URI {}:
+	精确匹配指定的路径，不包括子路径，因此，只对当前资源生效；
+
+location ~ URI {}:
+location ~* URI {}:
+	模式匹配URI，此处的URI可使用正则表达式，~区分字符大小写，~*不区分字符大小写；
+
+location ^~ URI {}:
+
+
+==============================
+emm nginx location 分析：
+
+server {
+    listen 3000 ssl;
+    server_name 192.168.1.1;
+    ssl_certificate /opt/nginx/certs/certificate.pem;
+    ssl_certificate_key /opt/nginx/certs/privatekey.pem;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    ssl_session_tickets off;
+    ssl_stapling_verify on;
+    ssl_prefer_server_ciphers on;
+#    ssl_protocols TLSv1.2;
+#    ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-SHA256;
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Cache-Control no-store;
+    add_header Pragma no-cache;
+    add_header X-Frame-Options SAMEORIGIN;
+    location / {
+        proxy_pass https://127.0.0.1:2000/;
+        proxy_read_timeout 60s;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-Ip $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        add_header X-Served-By "My Servlet Handler";
+    }
+    access_log  /opt/nginx/log/3000.access.log;
+    error_log   /opt/nginx/log/3000.error_log;
+}
+server {
+    listen 3001 ssl;
+    server_name 192.168.1.1;
+    ssl_certificate /opt/nginx/certs/certificate.pem;
+    ssl_certificate_key /opt/nginx/certs/privatekey.pem;
+    ssl_ciphers AES128+EECDH:AES128+EDH;
+    location / {
+        proxy_pass https://127.0.0.1:2001/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 3600s;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-Ip $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+    }
+    access_log  /opt/nginx/log/3001.access.log;
+    error_log   /opt/nginx/log/3001.error_log;
+}
+server {
+    listen 3002 ssl;
+    server_name 192.168.1.1;
+    ssl_certificate /opt/nginx/certs/certificate.pem;
+    ssl_certificate_key /opt/nginx/certs/privatekey.pem;
+    ssl_ciphers AES128+EECDH:AES128+EDH;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 20m;
+    keepalive_timeout   3600;
+    limit_rate 512k;
+    location / {
+        proxy_pass https://127.0.0.1:2002/;
+        proxy_set_header Host $host:$server_port;
+        proxy_read_timeout 1800s;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-Ip $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        client_max_body_size 5000m;
+    }
+    location /uusafe/api/behavior/report  {
+        upload_resumable on;
+        upload_state_store /data/uusafe-web/upload_tmp;
+        upload_pass @drivers_2upload_handler;
+        upload_store /data/uusafe-web/upload_tmp;
+        upload_store_access user:rw group:rw all:rw;
+        upload_set_form_field "filename" "$upload_file_name";
+        upload_set_form_field "filepath" "$upload_tmp_path";
+        upload_aggregate_form_field "filesize" "$upload_file_size";
+        proxy_connect_timeout   300s;
+        proxy_send_timeout      900s;
+        proxy_read_timeout 1800s;
+        upload_pass_form_field “^submit$|^description$”;
+        proxy_ignore_client_abort on;
+        upload_pass_args on;
+        client_max_body_size 5000m;
+    }
+    location @drivers_2upload_handler {
+        proxy_pass https://127.0.0.1:2002/uusafe/api/behavior/report?$args;
+        proxy_set_header Host $host:$server_port;
+        proxy_ignore_client_abort on;
+        proxy_connect_timeout   300s;
+        proxy_send_timeout      900s;
+        proxy_read_timeout 1800s;
+        upload_pass_form_field “^submit$|^description$”;
+        upload_pass_args on;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-Ip $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        client_max_body_size 5000m;
+    }
+    access_log  /opt/nginx/log/3002.access.log;
+    error_log   /opt/nginx/log/3002.error_log;
+}
+server {
+    listen 3003 ssl;
+    server_name 192.168.1.1;
+    ssl_certificate /opt/nginx/certs/certificate.pem;
+    ssl_certificate_key /opt/nginx/certs/privatekey.pem;
+    ssl_ciphers AES128+EECDH:AES128+EDH;
+    location / {
+        proxy_pass https://127.0.0.1:2003/;
+        proxy_read_timeout 300s;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-Ip $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+    }
+    access_log  /opt/nginx/log/3003.access.log;
+    error_log   /opt/nginx/log/3003.error_log;
+}
+server {
+    listen 3008;
+    server_name 192.168.1.1;
+    location / {
+        proxy_pass http://127.0.0.1:2008/;
+        proxy_read_timeout 60s;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-Ip $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+    }
+    access_log  /opt/nginx/log/3008.access.log;
+    error_log   /opt/nginx/log/3008.error_log;
+}
+server {
+    listen 3020 ssl;
+    server_name 192.168.1.1;
+    ssl_certificate /opt/nginx/certs/certificate.pem;
+    ssl_certificate_key /opt/nginx/certs/privatekey.pem;
+    ssl_ciphers AES128+EECDH:AES128+EDH;
+    location / {
+        proxy_pass https://127.0.0.1:2020/;
+        proxy_read_timeout 60s;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-Ip $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+    }
+    access_log  /opt/nginx/log/3020.access.log;
+    error_log   /opt/nginx/log/3020.error_log;
+}
+
+
+========================
+
+mos nginx location 分析： 
+
+server {
+    listen 9074 ssl;
+    server_name localhost;
+    # ssl on;
+    ssl_certificate     /opt/nginx/certs/certificate.pem;
+    ssl_certificate_key /opt/nginx/certs/privatekey.pem;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    access_log   /opt/nginx/log/access-9074.log;
+    error_log    /opt/nginx/log/error-9074.log;
+   
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+    }
+
+    location /uusafe/platform/auth/ {
+    	proxy_pass   http://127.0.0.1:8180/uusafe/platform/auth/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/platform/entitylogic/ {
+        proxy_pass   http://127.0.0.1:8280/uusafe/platform/entitylogic/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/platform/stringres/ {
+        proxy_pass   http://127.0.0.1:8280/uusafe/platform/stringres/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/platform/filemanager/ {
+        proxy_pass   http://127.0.0.1:8380/uusafe/platform/filemanager/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/platform/fulltextsearch/ {
+        proxy_pass   http://127.0.0.1:8480/uusafe/platform/fulltextsearch/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/platform/usermgr/ {
+        proxy_pass   http://127.0.0.1:8580/uusafe/platform/usermgr/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/platform/orgmgr/ {
+        proxy_pass   http://127.0.0.1:8580/uusafe/platform/orgmgr/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/platform/saas/ {
+        proxy_pass   http://127.0.0.1:8680/uusafe/platform/saas/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/platform/emailproxy/rest/ {
+        proxy_pass   http://127.0.0.1:8780/uusafe/platform/emailproxy/rest/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/mos/base/ {
+        proxy_pass   http://127.0.0.1:9180/uusafe/mos/base/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/mos/device/ {
+        proxy_pass   http://127.0.0.1:9280/uusafe/mos/device/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/mos/app/ {
+        proxy_pass   http://127.0.0.1:9380/uusafe/mos/app/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/mos/policy/ {
+        proxy_pass   http://127.0.0.1:9380/uusafe/mos/policy/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/mos/range/ {
+        proxy_pass   http://127.0.0.1:9380/uusafe/mos/range/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/mos/wrapping/ {
+        proxy_pass   http://127.0.0.1:9480/uusafe/mos/wrapping/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/mos/rest/ {
+        proxy_pass   http://127.0.0.1:9180/uusafe/mos/rest/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/api/iosapp/getTaskList {
+        proxy_pass   http://127.0.0.1:9480/uusafe/api/iosapp/getTaskList;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /portal/device/api/wdownFile {
+        proxy_pass   http://127.0.0.1:9480/portal/device/api/wdownFile;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /portal/device/api/uploadReBuildIpa {
+        proxy_pass   http://127.0.0.1:9480/portal/device/api/uploadReBuildIpa;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uusafe/mos/gateway/rest/ {
+        proxy_pass   http://127.0.0.1:9580/uusafe/mos/gateway/rest/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location /uusafe/mos/files {
+          alias /data/fileuploaded;
+          if ($request_uri ~* "filename=(.*)\.(apk|ipa|zip)") {
+                 add_header Content-disposition "attachment;filename=$1.$2";
+          }
+    }
+    location /uusafe/mos/portal/apk/mos.apk {
+          alias /uusafe/mos/portal/apk/mos.apk;
+    }
+    location /uusafe/mos/portal/ipa/mos.ipa {
+          alias /uusafe/mos/portal/ipa/mos.ipa;
+    }
+    location /uusafe/mos/portal/ipa/16px.png {
+          alias /uusafe/mos/portal/ipa/16px.png;
+    }
+    location /uusafe/mos/portal/ipa/64px.png {
+          alias /uusafe/mos/portal/ipa/64px.png;
+    }
+}
+
+
+	

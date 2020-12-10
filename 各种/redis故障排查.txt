@@ -1,0 +1,15 @@
+1. 看一下 配置文件里，端口、密码
+2. 用redis-cli连接
+	info   #查看信息，比如 主从状态、内存情况等等
+	dbsize  #看看大约有多少条数据
+	
+	set   xx  xx
+	get   xx  
+	#测试一下能否读写
+	
+	如果读写正常，说明redis是正常的---除了slave，slave是readonly
+	
+3. 看redis日志
+4. 检查 redis的数据文件
+
+	

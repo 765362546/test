@@ -1,0 +1,27 @@
+1、变量截取
+${parameter#*word}   从左向右
+${parameter##*word}
+
+${parameter%word*}   从右向左
+${parameter%%word*}
+
+例如：
+FILE=/usr/local/src
+
+${FILE#*/}: usr/local/src  
+${FILE##*/}: src
+
+${FILE%/*}: /usr/local  
+${FILE%%/*}:
+
+2、变量中字符的长度：${#VARNAME}
+
+3、变量赋值等：
+${parameter:-word}：如果parameter为空或未定义，则变量展开为“word”；否则，展开为parameter的值；
+${parameter:+word}：如果parameter为空或未定义，不做任何操作；否则，则展开为“word”值；
+${parameter:=word}：如果parameter为空或未定义，则变量展开为“word”，并将展开后的值赋值给parameter；
+${parameter:offset}
+${parameter:offset:length}：取子串，从offset处的后一个字符开始，取lenth长的子串；
+
+${parameter^^} 转大写
+${parameter,,} 转小写

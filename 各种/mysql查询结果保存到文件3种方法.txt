@@ -1,0 +1,20 @@
+方法一：
+mysql  -uxx -pxx dbname -e "select xxx from xxx" > aaaa.txt 
+
+方法二：
+#有可能没权限
+
+mysql -uxxx -pxxx
+select * from table limit 100  into outfile '/home/test.txt';
+
+方法三：
+#直接将所有mysql输出重定向到文件
+mysql -uxx -pxxx
+pager cat > /home/test.txt;
+select xx from xx 
+
+
+对比：
+方法一适用于简单的sql，里面不嵌套单双引号的
+方法三支持所有格式
+方法二 有时候没权限

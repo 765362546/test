@@ -1,0 +1,8 @@
+yum install pigz
+
+
+压缩
+tar --use-compress-program=pigz   -cf   xxx.tar.gz  xxxx
+
+解压缩 
+tar --use-compress-program=pigz   -xf   xxx.tar.gz -C xxx

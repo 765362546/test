@@ -1,0 +1,51 @@
+sed基本用法：
+sed: Stream EDitor
+	行编辑器 (全屏编辑器: vi)
+	
+sed: 模式空间
+默认不编辑原文件，仅对模式空间中的数据做处理；而后，处理结束后，将模式空间打印至屏幕；
+
+
+sed [options] 'AddressCommand' file ...
+	-n: 静默模式，不再默认显示模式空间中的内容
+	-i: 直接修改原文件
+	-e SCRIPT -e SCRIPT:可以同时执行多个脚本
+	-f /PATH/TO/SED_SCRIPT
+		sed -f /path/to/scripts  file
+	-r: 表示使用扩展正则表达式
+	
+Address：
+1、StartLine,EndLine
+	比如1,100
+	$：最后一行
+2、/RegExp/
+	/^root/
+3、/pattern1/,/pattern2/
+	第一次被pattern1匹配到的行开始，至第一次被pattern2匹配到的行结束，这中间的所有行
+4、LineNumber
+	指定的行
+5、StartLine, +N
+	从startLine开始，向后的N行；
+	
+Command：
+	d: 删除符合条件的行；
+	p: 显示符合条件的行；
+	a \string: 在指定的行后面追加新行，内容为string
+		\n：可以用于换行
+	i \string: 在指定的行前面添加新行，内容为string
+	r FILE: 将指定的文件的内容添加至符合条件的行处
+	w FILE: 将地址指定的范围内的行另存至指定的文件中; 
+	s/pattern/string/修饰符: 查找并替换，默认只替换每行中第一次被模式匹配到的字符串
+		加修饰符
+		g: 全局替换
+		i: 忽略字符大小写
+	s///: s###, s@@@	
+		\(\), \1, \2
+		
+	l..e: like-->liker
+		  love-->lover
+		  
+		  like-->Like
+		  love-->Love
+	
+	&: 引用模式匹配整个串

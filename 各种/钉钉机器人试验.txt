@@ -1,0 +1,68 @@
+curl 'https://oapi.dingtalk.com/robot/send?access_token=882c484d0abe4f9b8bc980c20428b90f5b984186c3a2386479045170819 application/json'    -d '{"msgtype": "text", 
+        "text": {                   
+             "content": "机器人测试：试验"
+        }                                     
+      }'
+      
+      
+
+curl 'https://oapi.dingtalk.com/robot/send?access_token=882c484d0abe4f9b8bc980c20428b90f5b984186c3a2386479045170819 application/json'    -d '{ 
+        "msgtype": "link", 
+        "link": {
+             "text": "机器人测试：访问量统计",
+             "title": "访问量统计",
+             "messageUrl": "https://emm.finupgroup.com:3000/data/access/count.txt"
+        }
+      }'
+
+
+
+      
+curl 'https://oapi.dingtalk.com/robot/send?access_token=882c484d0abe4f9b8bc980c20428b90f5b984186c3a238647904517081950816' \
+   -H 'Content-Type: application/json' \
+   -d '{
+            "feedCard": {
+             "links": [
+                 {
+                     "title": "机器人测试：访问量统计", 
+                     "messageURL": "https://emm.finupgroup.com:3000/data/access/count.txt", 
+                 },
+                 {
+                     "title": "机器人测试：慢查询统计", 
+                     "messageURL": "https://emm.finupgroup.com:3000/data/access/mysqlslowlog/20191115.txt", 
+                 }
+             ]
+         }, 
+         "msgtype": "feedCard"
+      }'
+      
+      
+curl 'https://oapi.dingtalk.com/robot/send?access_token=882c484d0abe4f9b8bc980c20428b90f5b984186c3a238647904517081950816' \
+   -H 'Content-Type: application/json' \
+   -d '{
+    "actionCard": {
+        "title": "凡普金科统计", 
+        "text": "机器人测试：凡普金科统计", 
+        "hideAvatar": "0", 
+        "btnOrientation": "0", 
+        "btns": [
+            {
+                "title": "业务量统计", 
+                "actionURL": "https://emm.finupgroup.com:3000/data/access/count.txt"
+            }, 
+            {
+                "title": "duration 汇总", 
+                "actionURL": " https://emm.finupgroup.com:3000/data/interface/20191115.txt"
+            },
+            {
+                "title": "慢查询统计", 
+                "actionURL": "https://emm.finupgroup.com:3000/data/access/mysqlslowlog/20191115.txt"
+            },
+            {
+                "title": "数据库文件大小", 
+                "actionURL": "https://emm.finupgroup.com:3000/data/access/mysqlsize.txt"
+            }
+        ]
+    }, 
+    "msgtype": "actionCard"
+}'

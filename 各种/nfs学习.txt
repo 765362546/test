@@ -1,0 +1,51 @@
+服务器端：nfs-utils
+
+nfs: nfsd(nfs服务), mountd(挂载), quotad(配额)
+
+nfsd: 2049/tcp, 2049/udp
+mountd: 端口
+quotad: 端口
+	半随机的
+
+
+/etc/exports
+/path/to/somedir CLIENT_LIST
+	多个客户之间使用空白字符分隔
+
+每个客户端后面必须跟一个小括号，里面定义了此客户访问特性，如访问权限等
+
+172.16.0.0/16(ro,async) 192.16.0.0/24(rw,sync)
+echo "/emm_share *(rw,sync,no_root_squash)" > /etc/exports
+
+showmount -e NFS_SERVER: 查看NFS服务器“导出”的各文件系统
+showmount -a NFS_SERVER: 查看NFS服务器所有被挂载的文件系统及其挂载的客户端对应关系列表
+showmount -d NFS_SERVER: 显示NFS服务器所有导出的文件系统中被客户端挂载了文件系统列表
+
+
+
+exportfs命令：
+	-a：跟-r或-u选项同时使用，表示重新挂载所有文件系统或取消导出所有文件系统；
+	-r: 重新导出
+	-u: 取消导出
+	-v: 显示详细信息
+
+
+
+客户端使用mount命令挂载
+
+mount -t nfs NFS_SERVER:/PATH/TO/SOME_EXPORT  /PATH/TO/SOMEWHRERE
+
+
+
+文件系统导出属性：
+	ro:
+	rw:
+	sync:
+	async:
+	root_squash: 将root用户映射为来宾账号；
+	no_root_squash: 
+	all_squash: 
+	anonuid, anongid: 指定映射的来宾账号的UID和GID；
+
+
+让mountd和quotad等进程监听在固定端口，编辑配置文件/etc/sysconfig/nfs

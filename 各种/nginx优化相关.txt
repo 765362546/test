@@ -1,0 +1,312 @@
+nginx优化：
+    功能方向
+    性能方向
+    
+nginx编译安装
+1.依赖
+        pcre pcre-devel  这个库是为了使nginx支持http rewrite模块
+            yum install xxx
+        openssl openssl-devel 为了支持https
+            yum install xxx
+        gperftools 一个查看性能的好工具，需要编译安装 google出的
+            ./configure --prefix=/usr/local --enable-frame-pointers
+            make make install
+        nginx-http-concat模块 优化用的，可以将多个静态资源请求，合并成一个响应，比如css js，一次性返回  淘宝出的开源模块
+            下载地址 https://github.com/alibaba/nginx-http-concat/  好像已经不维护了，先试试，不好使再说
+            
+            加压后，将nginx-http-concat整个文件夹，mv到nginx源码目录下
+            
+2.编译安装
+ # ./configure  --prefix=/usr/local/nginx/1.14.0  --user=nginx  --group=nginx --http-log-path=/var/log/nginx/access.log  --error-log-path=/var/log/nginx/error.log    --with-http_ssl_module  --with-http_stub_status_module   --with-http_gzip_static_module  --add-module=nginx-http-concat --with-google_perftools_module  --with-stream         
+    
+        make  make install 
+        
+3. 启动时会报错，找不到google性能监控的那个库，需要将那个库的路径，放到ld.so.conf.d/xx.conf里
+./nginx: error while loading shared libraries: libprofiler.so.0: cannot open shared object file: No such file or directory
+
+vim /etc/ld.so.conf.d/gperftools.conf
+添加 /usr/local/lib/
+
+ldconfig -v  重新加载一下库
+
+Nginx的configure脚本支持的选项（常用的选项如下）：
+--prefix=<path>            ：Nginx安装路径。如果没有指定，默认为/usr/local/nginx
+--sbin-path=<path>         ：Nginx课执行文件安装路径。只能安装时指定，如果没有指定，默认为<prefix>/sbin/nginx
+--conf-path=<path>         ：在没有给定-c选项下默认的nginx.conf的路径。如果没有指定，默认为<prefix>/conf/nginx.conf
+--pid-path=<path>          ：在nginx.conf中没有指定pid指令的情况下，默认的Nginx.pid的路径。如果没有指定，默认为<prefix>/log/nginx.pid
+--lock-path=<path>         ：nginx.lock文件的路径
+--error-log-path=<path>    ：在nginx.conf中没有指定error_log指令的情况下，默认的错误日志路径。如果没有指定，默认为<prefix>/logs/error.log
+--http-log-path=<path>     ：在nginx.conf中没有指定access_log指令的情况下，默认的访问日志的路径。如果没有指定，默认为<prefix>/logs/access.log
+--user=<user>              ：在nginx.conf中没有指定user指令的，默认的Nginx使用的用户。如果没有指定，默认为noboby
+--group=<group>            ：在nginx.conf中没有指定user指令的情况下，默认的Nginx使用的组。如果没有指定，默认为noboby
+--with-http——ssl_module    ：开启HTTP SSL模块，使Nginx可以支持HTTPS请求。这个模块需要已经安装openssl
+--with-http_stub_status_module ：启用“server status” 页
+--with-http_gzip_static_module ：启用ngx_http_gzip_static_module支持（在线实时压缩输出数据流）
+--with-google_perftools_module ：启用ngx_google_perftools_module支持（调试用，剖析程序性能瓶颈）
+
+
+
+Nginx的configure脚本支持的选项（所有参数如下）：
+--prefix=<path>             ：指向安装目录
+--sbin-path=<path>          ：指向（执行）程序文件（nginx）
+--conf-path=<path>          ：指向配置文件（nginx.conf）
+--error-log-path=<path>     ：指向错误日志目录
+--pid-path=<path>           ：指向pid文件（nginx.pid）
+--lock-path=<path>          ：指向lock文件（nginx.lock）（安装文件锁定，防止安装文件被别人利用，或自己误操作。）
+--user=<user>               ：指定程序运行时的非特权用户
+--group=<group>             ：指定程序运行时的非特权用户组
+--builddir=<path>           ：指向编译目录
+--with-rtsig_module         ：启用rtsig模块支持（实时信号）
+--with-select_module        ：启用select模块支持（一种轮询模式,不推荐在高载环境下使用）禁用：--without-select_module
+--with-poll_module          ：启用poll模块支持（功能与select相同，与select特性相同，为一种轮询模式,不推荐在高载环境下使用）
+--with-file-aio             ：启用file aio支持（一种APL文件传输格式）
+--with-ipv6                 ：启用ipv6支持
+--with-http_ssl_module      ：启用ngx_http_ssl_module支持（使支持https请求，需已安装openssl）
+--with-http_realip_module   ：启用ngx_http_realip_module支持（这个模块允许从请求标头更改客户端的IP地址值，默认为关）
+--with-http_addition_module ：启用ngx_http_addition_module支持（作为一个输出过滤器，支持不完全缓冲，分部分响应请求）
+--with-http_xslt_module     ：启用ngx_http_xslt_module支持（过滤转换XML请求）
+--with-http_image_filter_module ：启用ngx_http_image_filter_module支持（传输JPEG/GIF/PNG 图片的一个过滤器）（默认为不启用。gd库要用到）
+--with-http_geoip_module    ：启用ngx_http_geoip_module支持（该模块创建基于与MaxMind GeoIP二进制文件相配的客户端IP地址的ngx_http_geoip_module变量）
+--with-http_sub_module      ：启用ngx_http_sub_module支持（允许用一些其他文本替换nginx响应中的一些文本）
+--with-http_dav_module      ：启用ngx_http_dav_module支持（增加PUT,DELETE,MKCOL：创建集合,COPY和MOVE方法）默认情况下为关闭，需编译开启
+--with-http_flv_module      ：启用ngx_http_flv_module支持（提供寻求内存使用基于时间的偏移量文件）
+--with-http_gzip_static_module ：启用ngx_http_gzip_static_module支持（在线实时压缩输出数据流）
+--with-http_random_index_module ：启用ngx_http_random_index_module支持（从目录中随机挑选一个目录索引）
+--with-http_secure_link_module ：启用ngx_http_secure_link_module支持（计算和检查要求所需的安全链接网址）
+--with-http_degradation_module  ：启用ngx_http_degradation_module支持（允许在内存不足的情况下返回204或444码）
+--with-http_stub_status_module ：启用ngx_http_stub_status_module支持（获取nginx自上次启动以来的工作状态）
+--without-http_charset_module ：禁用ngx_http_charset_module支持（重新编码web页面，但只能是一个方向--服务器端到客户端，并且只有一个字节的编码可以被重新编码）
+--without-http_gzip_module  ：禁用ngx_http_gzip_module支持（该模块同-with-http_gzip_static_module功能一样）
+--without-http_ssi_module   ：禁用ngx_http_ssi_module支持（该模块提供了一个在输入端处理处理服务器包含文件（SSI）的过滤器，目前支持SSI命令的列表是不完整的）
+--without-http_userid_module ：禁用ngx_http_userid_module支持（该模块用来处理用来确定客户端后续请求的cookies）
+--without-http_access_module ：禁用ngx_http_access_module支持（该模块提供了一个简单的基于主机的访问控制。允许/拒绝基于ip地址）
+--without-http_auth_basic_module ：禁用ngx_http_auth_basic_module（该模块是可以使用用户名和密码基于http基本认证方法来保护你的站点或其部分内容）
+--without-http_autoindex_module  ：禁用disable ngx_http_autoindex_module支持（该模块用于自动生成目录列表，只在ngx_http_index_module模块未找到索引文件时发出请求。）
+--without-http_geo_module   ：禁用ngx_http_geo_module支持（创建一些变量，其值依赖于客户端的IP地址）
+--without-http_map_module   ：禁用ngx_http_map_module支持（使用任意的键/值对设置配置变量）
+--without-http_split_clients_module ：禁用ngx_http_split_clients_module支持（该模块用来基于某些条件划分用户。条件如：ip地址、报头、cookies等等）
+--without-http_referer_module ：禁用disable ngx_http_referer_module支持（该模块用来过滤请求，拒绝报头中Referer值不正确的请求）
+--without-http_rewrite_module ：禁用ngx_http_rewrite_module支持（该模块允许使用正则表达式改变URI，并且根据变量来转向以及选择配置。如果在server级别设置该选项，那么他们将在 location之前生效。如果在location还有更进一步的重写规则，location部分的规则依然会被执行。如果这个URI重写是因为location部分的规则造成的，那么 location部分会再次被执行作为新的URI。 这个循环会执行10次，然后Nginx会返回一个500错误。）
+--without-http_proxy_module ：禁用ngx_http_proxy_module支持（有关代理服务器）
+--without-http_fastcgi_module ：禁用ngx_http_fastcgi_module支持（该模块允许Nginx 与FastCGI 进程交互，并通过传递参数来控制FastCGI 进程工作。 ）FastCGI一个常驻型的公共网关接口。
+--without-http_uwsgi_module ：禁用ngx_http_uwsgi_module支持（该模块用来医用uwsgi协议，uWSGI服务器相关）
+--without-http_scgi_module ：禁用ngx_http_scgi_module支持（该模块用来启用SCGI协议支持，SCGI协议是CGI协议的替代。它是一种应用程序与HTTP服务接口标准。它有些像FastCGI但他的设计 更容易实现。）
+--without-http_memcached_module ：禁用ngx_http_memcached_module支持（该模块用来提供简单的缓存，以提高系统效率）
+-without-http_limit_zone_module ：禁用ngx_http_limit_zone_module支持（该模块可以针对条件，进行会话的并发连接数控制）
+--without-http_limit_req_module ：禁用ngx_http_limit_req_module支持（该模块允许你对于一个地址进行请求数量的限制用一个给定的session或一个特定的事件）
+--without-http_empty_gif_module ：禁用ngx_http_empty_gif_module支持（该模块在内存中常驻了一个1*1的透明GIF图像，可以被非常快速的调用）
+--without-http_browser_module   ：禁用ngx_http_browser_module支持（该模块用来创建依赖于请求报头的值。如果浏览器为modern ，则$modern_browser等于modern_browser_value指令分配的值；如 果浏览器为old，则$ancient_browser等于 ancient_browser_value指令分配的值；如果浏览器为 MSIE中的任意版本，则 $msie等于1）
+--without-http_upstream_ip_hash_module ：禁用ngx_http_upstream_ip_hash_module支持（该模块用于简单的负载均衡）
+--with-http_perl_module ：启用ngx_http_perl_module支持（该模块使nginx可以直接使用perl或通过ssi调用perl）
+--with-perl_modules_path= ：设定perl模块路径
+--with-perl= 设定perl库文件路径
+--http-log-path= 设定access log路径
+--http-client-body-temp-path= 设定http客户端请求临时文件路径
+--http-proxy-temp-path= 设定http代理临时文件路径
+--http-fastcgi-temp-path= 设定http fastcgi临时文件路径
+--http-uwsgi-temp-path= 设定http uwsgi临时文件路径
+--http-scgi-temp-path= 设定http scgi临时文件路径
+-without-http 禁用http server功能
+--without-http-cache 禁用http cache功能
+--with-mail 启用POP3/IMAP4/SMTP代理模块支持
+--with-mail_ssl_module 启用ngx_mail_ssl_module支持
+--without-mail_pop3_module 禁用pop3协议（POP3即邮局协议的第3个版本,它是规定个人计算机如何连接到互联网上的邮件服务器进行收发邮件的协议。是因特网电子邮件的第一个离线协议标 准,POP3协议允许用户从服务器上把邮件存储到本地主机上,同时根据客户端的操作删除或保存在邮件服务器上的邮件。POP3协议是TCP/IP协议族中的一员，主要用于 支持使用客户端远程管理在服务器上的电子邮件）
+--without-mail_imap_module 禁用imap协议（一种邮件获取协议。它的主要作用是邮件客户端可以通过这种协议从邮件服务器上获取邮件的信息，下载邮件等。IMAP协议运行在TCP/IP协议之上， 使用的端口是143。它与POP3协议的主要区别是用户可以不用把所有的邮件全部下载，可以通过客户端直接对服务器上的邮件进行操作。）
+--without-mail_smtp_module 禁用smtp协议（SMTP即简单邮件传输协议,它是一组用于由源地址到目的地址传送邮件的规则，由它来控制信件的中转方式。SMTP协议属于TCP/IP协议族，它帮助每台计算机在发送或中转信件时找到下一个目的地。）
+--with-google_perftools_module 启用ngx_google_perftools_module支持（调试用，剖析程序性能瓶颈）
+--with-cpp_test_module 启用ngx_cpp_test_module支持
+--add-module= 启用外部模块支持
+--with-cc= 指向C编译器路径
+--with-cpp= 指向C预处理路径
+--with-cc-opt= 设置C编译器参数（PCRE库，需要指定–with-cc-opt=”-I /usr/local/include”，如果使用select()函数则需要同时增加文件描述符数量，可以通过–with-cc- opt=”-D FD_SETSIZE=2048”指定。）
+--with-ld-opt= 设置连接文件参数。（PCRE库，需要指定–with-ld-opt=”-L /usr/local/lib”。）
+--with-cpu-opt= 指定编译的CPU，可用的值为: pentium, pentiumpro, pentium3, pentium4, athlon, opteron, amd64, sparc32, sparc64, ppc64
+--without-pcre 禁用pcre库
+--with-pcre 启用pcre库
+--with-pcre= 指向pcre库文件目录
+--with-pcre-opt= 在编译时为pcre库设置附加参数
+--with-md5= 指向md5库文件目录（消息摘要算法第五版，用以提供消息的完整性保护）
+--with-md5-opt= 在编译时为md5库设置附加参数
+--with-md5-asm 使用md5汇编源
+--with-sha1= 指向sha1库目录（数字签名算法，主要用于数字签名）
+--with-sha1-opt= 在编译时为sha1库设置附加参数
+--with-sha1-asm 使用sha1汇编源
+--with-zlib= 指向zlib库目录
+--with-zlib-opt= 在编译时为zlib设置附加参数
+--with-zlib-asm= 为指定的CPU使用zlib汇编源进行优化，CPU类型为pentium, pentiumpro
+--with-libatomic 为原子内存的更新操作的实现提供一个架构
+--with-libatomic= 指向libatomic_ops安装目录
+--with-openssl= 指向openssl安装目录
+--with-openssl-opt 在编译时为openssl设置附加参数
+--with-debug 启用debug日志
+
+master：主要负责，加载解析配置文件、生成日志文件，生成和管理worker进程
+worker：解析和处理用户请求
+
+
+Nginx的平滑重启：
+如果改变了Nginx的配置文件（nginx.conf），想重启Nginx，同时可以通过发送系统信号给Nginx主进程的方式来进行。不过重启之前，要确认Nginx配置文件（nginx.conf）的语法是正确的，否则Nginx将不会加载新的配置文件。通过以下命令可以判断Nginx配置文件是否正确：
+./nginx  -t -c ../conf/nginx.conf
+如果配置文件不正确，屏幕将会提示配置文件的第几行出错
+nginx: [emerg] "access_log" directive is not allowed here in /usr/local/nginx/1.6.3/conf/nginx.conf:10
+nginx: configuration file /usr/local/nginx/1.6.3/conf/nginx.conf test failed
+如果配置文件正确：
+nginx: the configuration file /usr/local/nginx/1.6.3/conf/nginx.conf syntax is ok
+nginx: configuration file /usr/local/nginx/1.6.3/conf/nginx.conf test is successful
+
+这时候，就可以平滑重启Nginx了
+kill -HUP  Nginx主进程号
+kill -HUP  `cat /usr/local/nginx/1.6.3/logs/nginx.pid`
+当Nginx主进程HUP信号时，它会尝试先解析配置文件（如果没有配置文件，就会使用指定的，否者使用默认的），如果成功，就应用新的配置文件（例如，重新打开日志文件或监听的套接字）。之后，Nginx运行新的工作进程并从容关闭旧的工作进程。通知工作进程关闭套接字，但是继续为当前的客户提供服务。所有客户端的服务完成后，旧的工作进程被关闭。如果新的配置文件应用失败，Nginx将继续使用旧的配置进行工作。
+
+
+
+Nginx的信号控制：
+TERM，INT 快速关闭；
+QUIT      从容关闭
+HUP       平滑重启，重新加载配置文件
+USR1      重新打开日志文件，在切割日志时用途较大
+USR2      平滑升级可执行程序
+WINCH     从容关闭工作进程
+
+
+Nginx的日志切割（编写bash脚本实现）：
+#!/bin/bash
+
+
+log_dir='/log/'
+log_name1='linux.90daxue.com.log'
+nginx_pid_dir='/usr/local/nginx/1.6.3/logs/nginx.pid'
+
+
+mv ${log_dir}${log_name1} ${log_dir}${log_name1}_`date -d "-1 day" +%Y_%m_%d`
+kill -USR1 `cat ${nginx_pid_dir}`
+
+
+
+配置nginx：重点：
+
+1、nginx日志的设置
+与Nginx日志相关的指令主要有两条，一条是log_format，用来设置日志的格式。另外一条是access_log，用来指定日志文件的存放路径、格式和缓存大小。两条指令在Nginx配置文件中的位置可以在http{....}之间，也可以在虚拟主机之间，即server{....}之间。
+
+
+用log_format指令设置日志格式，语法如下：
+log_format  name  format [format ...]
+其中name表示定义的格式名称，format表示定义的格式样式。log_format有一个默认的、无需设置的combined日志格式设置，combined的日志格式如下：
+log_format  combined  '$remote_addr - $remote_user [$time_local]'
+                    '"$request" $status $body_bytes_sent '
+                    '"$http_referer" "$http_user_agetn"';
+
+可以自定义一份日志的记录格式，不过要注意，log_format指令设置的name名称在Nginx配置文件中是不能重复的。
+
+如果Nginx服务器作为Web服务器，位于负载均衡设备、Squid反向代理的之后，就不能获取到客户端的真实IP地址了。原因是经过反向代理后，由于在客户端和Web服务器之间增加了中间层，因此Web服务器无法直接拿到客户端的IP，通过$remote_addr变量拿到的将是反向代理服务器的IP地址。但是，反向代理服务器在转发请求的HTTP头信息中，可以增加X-Forwarded-For信息，用以记录原有的客户端IP地址和原来客户端请求的服务器地址。这个时候要用log_format指令来设置日志格式，让日志记录X-Forwarded-For信息中的IP地址，即客户的真实IP，设置如下
+log_format  mylogformat  '$http_x_forwarded_for - $remote_user [$time_local] '
+                        '"$request"  $status $body_bytes_sent '
+                        '"$http_referer" "$http_user_agent"'
+
+日志格式样式中，
+$remote_addr和$http_x_forwarded_for：用于记录IP地址；
+$remote_user：用于记录远程客户端用户名称
+$time_local用于记录访问时间与时区；
+$request用于记录请求URL与HTTP协议
+$status 用于记录请求状态
+$body_bytes_sent  用于记录发送给客户端的文件主体内容大小
+$http_referer 用于记录是从哪个页面链接访问过来的；
+$http_user_agent用于记录客户端浏览器的相关信息。
+
+
+access_log指令的语法如下：
+access_log path  [format  [buffer=size  | off]]
+path：指定日志路径
+format:指定日志格式
+buffer：指定日志内存缓冲区大小
+
+如：access_log  /log/access.log  mylogformat  buffer=32k;
+
+
+
+
+Nginx主配置文件的详解（优化后的nginx.conf）
+
+user  nginx nginx;                #运行nginx的用户和组
+worker_processes  8;              #允许启动的nginx进程数
+worker_cpu_affinity 00000001 00000010 00000100 00001000 00010000 00100000 01000000 10000000;   #为每个nginx进程绑定cpu，将8个nginx进程绑定到8个cpu上
+
+
+
+worker_rlimit_nofile 102400；   #这个指令是指当一个Nginx进程打开的最多文件描述符数目，理论值应该是最多打开文件数（ulimit -n）与Nginx进程数相除，但是Nginx分配请求并不是那么均匀，所以最好与ulimit -n的值保持一致。
+
+client_header_buffer_size 4k;  #客户端请求头部的缓冲区大小，这个可以根据你的系统分页大小来设置，以便一个请求头的大小不会超过1k，不过由于一般系统分页都要大于1k；所以这里设置为分页大小。分页大小可以用命令getconf PAGESIZE取得
+
+open_file_cache max=102400 inactive=20s;  #这个将为打开文件指定缓存，默认是没有启用，max指定缓存数量，建议和打开文件数一致，inactive是指经过多长时间文件没有被请求后删除缓存。
+
+open_file_cache_valid 30s; #这个是指多长时间检查一次缓存的有效信息。
+
+open_file_cache_min_uses 1;  #open_file_cache指令中的inactive参数时间内文件的最少使用次数，如果超过这个数字，文件描述符一直是缓存中打开的，如上例，如果有一个文件在inactive时间内没有使用，它将被移除。
+
+
+
+
+
+error_log  /log/nginx/error.log  error;   指定错误日志存放的路径，错误日志记录级别可选项为[ debug |info | notice | warn | error | crit ]
+
+google_perftools_profiles /tmp/tcmalloc;     #做了nginx下的Google-perftools优化
+
+
+
+events {
+    use epoll;          #使用epoll的I/O模型
+    multi_accept on;    #（告诉nginx收到一个新的连接通知后接受尽可能多的连接）是否允许一次性地响应多个用户请求，
+    worker_connections  204800;     #每个进程允许的最大连接数
+}
+
+
+http {
+    include       mime.types;                  #加载媒体类型
+    default_type  application/octet-stream; 
+
+    #charset gb2312    设置使用的字符集，如果一个网站有多种字符集，请不要随便设置，应让程序员在HTML代码中通过Meta标签设置   
+
+    access_log /dev/null;    #不记录全局访问日志
+
+    client_max_body_size 8m   设置客户端能够上传的文件大小
+    
+    sendfile       on;       #sendfile是Linux2.0+退出的一个系统调用，可以避免数据经过用户层，以此可以减少上下文切换次数，和数据拷贝次数。开启这项功能可以优化web服务器，从硬盘读取数据直接传送到网络的性能
+    
+    tcp_nopush     on;       #这个参数原理比较复杂，待定
+
+    keepalive_timeout  65;   #设定长连接超时时长
+
+
+    #压缩配置（主要是为了提高数据传输速度）
+
+    gzip  on;                #开启nginx的gzip压缩，gzip压缩功能就是可以让你节省不少宽带，并加快传输速度，但是会增加服务器CPU的开销。
+    gzip_disable "msie6";  #禁用IE6的gzip压缩，IE6的某些版本对gzip的压缩支持很不好，会照成页面的假死，测试发现对img进行gzip压缩后会照成IE6的假死。
+
+    gzip_proxied any;      #对所有的代理结果数据无条件启动压缩
+    gzip_min_length 1000;  #规定大于1K的页面才启动压缩（为了避免页面过小，数据可能会越压越大）
+    gzip_comp_level 4;     #定义gzip的压缩比   1：压缩比最小，处理速度最快，9：压缩比最大但处理最慢（传输快但比较消耗CPU）
+
+    gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;   #指定需要压缩的MIME类型，"test/html"类型总是会被压缩的。
+
+    gzip_vary on;    #与http头有关系，价格vary头，给代理服务器用的，有的浏览器支持压缩，有的不支持。因此，为了避免浪费不支持的也压缩，需要根据客户端的HTTP头来判断，是否需要压缩（这个理论不太确定），一般用于squid做反向代理是gzip压缩失效。
+
+    open_file_cache max=100000 inactive=20s;   #缓存打开文件描述的文件大小和修改时间信息、存在的目录信息、搜索文件的错误信息：文件不存在 无权限读取等信息。 max指定缓存数量  inactive是指经过多长时间文件没有被请求后删除缓存。这里指定的是20s，所以等到至少20s不访问这个文件，相应缓存的这个文件的更改信息才会被删除
+
+    open_file_cache_valid 30s;
+    #这个是指多长时间检查一次缓存的有效信息。也就是说即使我一直访问这个文件，30s后会检查此文件的更改信息是否改变，发现变化就更新。
+
+    open_file_cache_min_uses 2;
+    #这个指令指定了open_file_cache指令无效的参数中一定的时间范围内可以使用的最小文件数，如果使用更大的值，文件描述符在cached中总是打开状态。
+    
+
+    open_file_cache_errors on;
+    #这个指令是否在搜索一个文件是记录cached错误。
+
+
+}
+        
+        
+        
+        
+        
